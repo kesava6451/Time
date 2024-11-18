@@ -31,7 +31,7 @@ jobs:
           ng build --configuration production  # Build with production configuration
 
       - name: List contents of build output directory
-        run: ls -l dist/sample-angular-app  # Verify the build output path
+        run: ls -l dist/timedashboard  # Verify the build output path
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
