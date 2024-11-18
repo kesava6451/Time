@@ -37,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: angular-build
-          path: dist/timedashboard  # Path to your build output directory
+          path: /publish  # Path to your build output directory
 
   deploy:
     runs-on: windows-latest  # Run deployment on a Windows runner
@@ -51,7 +51,7 @@ jobs:
 
       - name: Copy files to IIS server
         run: |
-          $sourcePath = "E:\Angular-Web\Timedashboard\dist\timedashboard"  # Path to your build output folder
+          $sourcePath = "/publish"  # Path to your build output folder
           $targetPath = "C:\CurrentTime"  # Shared folder on your IIS server
           Copy-Item -Path "$sourcePath\*" -Destination $targetPath -Recurse -Force
 
