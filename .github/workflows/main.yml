@@ -3,12 +3,12 @@ name: Build and deploy Angular app to IIS server
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # You can also use 'windows-latest' if preferred
+    runs-on: ubuntu-latest  # Use 'windows-latest' if required for your setup
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -16,19 +16,26 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14.x'  # Set the version according to your project requirements
+          node-version: '14.x'  # Use your Node.js version here
+
+      - name: Install Angular CLI globally
+        run: |
+          npm install -g @angular/cli  # Install Angular CLI globally
 
       - name: Install dependencies
-        run: npm install
+        run: npm install  # Install project dependencies (including Angular CLI if not already in package.json)
 
       - name: Build Angular project
-        run: ng build --configuration production  # Build with production settings
+        run: |
+          echo "Building Angular app with production configuration"
+          ng build --configuration production  # Build with production configuration
 
       - name: List contents of build output directory
-        run: ls -l dist/sample-angular-app  # Adjust according to your `angular.json` build output path
+        run: ls -l dist/sample-angular-app  # Verify the build output path
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
           name: angular-build
-          path: dist/sample-angular-app  # Path to your build output
+          path: dist/sample-angular-app  # Path to your build output directory
+          
