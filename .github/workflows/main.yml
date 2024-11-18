@@ -34,7 +34,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: angular-build
-          path: build_output/  # Path to your Angular build output directory (adjust if needed)
+          path: dist/timedashboard/  # Path to the Angular build output directory
 
   deploy:
     runs-on: self-hosted  # Use Windows runner for deployment
@@ -49,10 +49,16 @@ jobs:
       - name: Copy files to IIS server
         run: |
           # Adjust the source path and target path as per your system setup
-          $sourcePath = "build_output/"  # Ensure this path is correct on the runner
-          $targetPath = "C:\CurrentTime"  # IIS server path where the app should be deployed
+          $sourcePath = "dist\timedashboard"  # The path to the build output from the previous step
+          $targetPath = "C:\inetpub\wwwroot\timedashboard"  # The IIS server path where the app should be deployed
+          # Make sure the target directory exists and copy the files
           Copy-Item -Path "$sourcePath\*" -Destination $targetPath -Recurse -Force
 
       - name: Verify deployment
         run: |
-          curl http://your-iis-server-ip-or-domain/your-app-folder  # Verify that the app is deployed successfully
+          curl http://your-iis-server-ip-or-domain/timedashboard  # Verify that the app is deployed successfully
+
+      - name: Clean up build artifacts
+        run: |
+          # Clean up build artifacts if needed
+          Remove-Item -Path "dist\timedashboard" -Recurse -Force  # Delete the build directory
