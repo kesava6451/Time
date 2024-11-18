@@ -44,11 +44,7 @@ jobs:
 
     needs: build
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: angular-build
-
+    
       - name: Copy files to IIS server
         run: |
           $sourcePath = "dist/timedashboard"  # Path to your build output folder
