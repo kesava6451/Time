@@ -4,35 +4,50 @@ on:
     branches:
       - master  # Trigger on push to the master branch
   workflow_dispatch:  # Allows manual triggering of the workflow
+
 jobs:
   build:
     runs-on: self-hosted  # You can use 'windows-latest' if needed for Windows environment
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
       - name: Install Angular CLI globally
         run: npm install -g @angular/cli  # Install Angular CLI globally
+
       - name: Install dependencies
         run: npm install  # Install dependencies defined in package.json
+
       - name: Build Angular project
         run: ng build --configuration production  # Build Angular project with production config
-      - name: List contents of build output directory
-        run: ls -l dist/timedashboard  # Verify if the build output is in the correct directory
-   # Path to your Angular build output directory (adjust if needed)
+
+      - name: Upload build artifacts to GitHub
+        uses: actions/upload-artifact@v3
+        with:
+          name: angular-build
+          path: dist/timedashboard  # Path to your Angular build output directory
+
   deploy:
     runs-on: self-hosted  # Use Windows runner for deployment
     needs: build  # Ensure that the build step is successful before starting the deployment
     steps:
+      - name: Download build artifacts from GitHub
+        uses: actions/download-artifact@v3
+        with:
+          name: angular-build
+
       - name: Copy files to IIS server
         run: |
           # Adjust the source path and target path as per your system setup
-          $sourcePath = "C:\Users\Aadil\Documents\actions-runner\_work\Time\Time\dist"  # Ensure this path is correct on the runner
+          $sourcePath = "$(System.DefaultWorkingDirectory)\angular-build"
           $targetPath = "C:\inetpub\wwwroot\timedashboard"  # IIS server path where the app should be deployed
           Copy-Item -Path "$sourcePath\*" -Destination $targetPath -Recurse -Force
+
       - name: Verify deployment
         run: |
           curl http://currenttime.com/timedashboard  # Verify that the app is deployed successfully

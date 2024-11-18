@@ -8,7 +8,6 @@ import { Component, OnInit } from '@angular/core';
 })
 export class CurrentTimeComponent implements OnInit {
   Date1 : Date = new Date();
-  LocalDate : String = new Date().toLocaleString()
   constructor() {}
 
   ngOnInit(): void {
@@ -18,7 +17,6 @@ export class CurrentTimeComponent implements OnInit {
   updateTime(): void {
     setInterval(() => {
       this.Date1 = new Date(); // Updates the time every second
-      this.LocalDate = this.Date1.toLocaleDateString(); // Formats the date to local
     }, 1000);
   }
 }
