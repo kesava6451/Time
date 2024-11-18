@@ -1,4 +1,5 @@
-name: Build and deploy Angular app to Azure Web App — sampleangularApp
+name: Build and deploy Angular app to IIS server
+
 on:
   push:
     branches:
@@ -7,21 +8,27 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest  # You can also use 'windows-latest' if preferred
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Node.js version
-        uses: actions/setup-node@v1
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: '12.x'
+          node-version: '14.x'  # Set the version according to your project requirements
+
       - name: Install dependencies
-        run: npm install  # Install all required dependencies
+        run: npm install
+
       - name: Build Angular project
-        run: npx ng build --configuration production # Directly use Angular CLI build command
+        run: ng build --configuration production  # Build with production settings
+
       - name: List contents of build output directory
-        run: dir dist/sample-angular-app  # Verify that the build has generated the files in the output folder
+        run: ls -l dist/sample-angular-app  # Adjust according to your `angular.json` build output path
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
-          name: deploy_dist
-          path: dist/sample-angular-app  # Adjust this path based on your angular.json settings
+          name: angular-build
+          path: dist/sample-angular-app  # Path to your build output
