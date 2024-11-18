@@ -45,7 +45,7 @@ jobs:
       - name: Deploy to IIS
         run: |
           # Define paths and IIS settings dynamically
-          $sourcePath = "${{ github.workspace }}\angular-build"  # This dynamically points to the downloaded artifact
+          $sourcePath = "${{ github.workspace }}\browser"  # This dynamically points to the downloaded artifact
           $destinationPath = "C:\Kesava\web\timer"
           $siteName = "newtimer.com"  # IIS site name
           $appPoolName = "TimerAppPool"  # Application pool name
