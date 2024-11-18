@@ -32,22 +32,62 @@ jobs:
           name: angular-build
           path: dist/timedashboard  # Path to your Angular build output directory
 
-  deploy:
-    runs-on: self-hosted  # Use Windows runner for deployment
-    needs: build  # Ensure that the build step is successful before starting the deployment
-    steps:
-      - name: Download build artifacts from GitHub
-        uses: actions/download-artifact@v3
-        with:
-          name: angular-build
+ deploy:
+  runs-on: self-hosted  # Use Windows runner for deployment
+  needs: build  # Ensure the build step is successful before starting the deployment
+  steps:
+    - name: Download build artifacts from GitHub
+      uses: actions/download-artifact@v3
+      with:
+        name: angular-build  # Name of the uploaded artifact
 
-      - name: Copy files to IIS server
-        run: |
-          # Adjust the source path and target path as per your system setup
-          $sourcePath = "$(System.DefaultWorkingDirectory)\angular-build"
-          $targetPath = "C:\inetpub\wwwroot\timedashboard"  # IIS server path where the app should be deployed
-          Copy-Item -Path "$sourcePath\*" -Destination $targetPath -Recurse -Force
+    - name: Deploy to IIS
+      run: |
+        # Define paths and IIS settings dynamically
+        $sourcePath = "${{ github.workspace }}\browser"  # This dynamically points to the downloaded artifact
+        $destinationPath = "C:\Kesava\web\timer"
+        $siteName = "newtimer.com"  # IIS site name
+        $appPoolName = "TimerAppPool"  # Application pool name
+        $bindingInfo = "*:80:timer.local"  # Replace with your actual binding info
 
-      - name: Verify deployment
-        run: |
-          curl http://currenttime.com/timedashboard  # Verify that the app is deployed successfully
+        # Create the destination directory if it doesn't exist
+        if (-Not (Test-Path $destinationPath)) {
+          New-Item -ItemType Directory -Path $destinationPath
+        }
+
+        # Copy the files to the destination
+        Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
+
+        # Import the WebAdministration module
+        Import-Module WebAdministration
+
+        # Check if the application pool exists, if not, create it
+        if (-Not (Get-WebAppPoolState -Name $appPoolName -ErrorAction SilentlyContinue)) {
+          New-WebAppPool -Name $appPoolName
+          Set-ItemProperty IIS:\AppPools\$appPoolName -Name "managedPipelineMode" -Value "Integrated"  # Ensure Integrated Mode
+        }
+
+        # Check if the site exists, if not, create it
+        if (-Not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
+          New-Website -Name $siteName -PhysicalPath $destinationPath -ApplicationPool $appPoolName -BindingInformation $bindingInfo
+        } else {
+          # Update the site's physical path and application pool if it already exists
+          Set-ItemProperty IIS:\Sites\$siteName -Name "physicalPath" -Value $destinationPath
+          Set-ItemProperty IIS:\Sites\$siteName -Name "applicationPool" -Value $appPoolName
+        }
+
+        # Verify or add the URL binding
+        $bindings = (Get-Item "IIS:\Sites\$siteName").bindings.Collection
+        $bindingExists = $false
+        foreach ($binding in $bindings) {
+          if ($binding.bindingInformation -eq $bindingInfo) {
+            $bindingExists = $true
+            break
+          }
+        }
+        if (-Not $bindingExists) {
+          New-WebBinding -Name $siteName -IPAddress "*" -Port 80 -HostHeader "timer.local"
+        }
+
+        # Restart IIS to reflect changes
+        iisreset
