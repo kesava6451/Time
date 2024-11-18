@@ -37,34 +37,4 @@ jobs:
           name: build-artifacts
           path: dist  # Assuming 'dist' is the folder containing your build output
 
-  deploy:
-    runs-on: selfhost  # Deployment job runs on Ubuntu runner (You can use Windows runner as well)
-
-    needs: build  # Ensures deployment only happens after the build completes
-
-    steps:
-      # Checkout the code again for deployment
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      # Download build artifacts (from the previous build job)
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: build-artifacts
-
-      # Deploy to IIS (Windows Server)
-      - name: Deploy to IIS (Windows Server)
-        uses: appleboy/ssh-action@v0.1.5
-        with:
-          host: ${{ secrets.IIS_SERVER_IP }}  # Your server's IP address stored in GitHub Secrets
-          username: ${{ secrets.IIS_SERVER_USER }}  # Your server's username stored in GitHub Secrets
-          password: ${{ secrets.IIS_SERVER_PASSWORD }}  # Your server's password stored in GitHub Secrets
-          script: |
-            cd C:/path/to/your/app  # Specify the folder where your app is located on the server
-            git pull origin master  # Pull the latest changes from your repository
-            npm install  # Install dependencies on the server
-            npm run build --prod  # Build the Angular app on the server (if not prebuilt)
-            iisreset /stop  # Stop IIS before copying the new files
-            copy /Y dist/* C:/inetpub/wwwroot/your-app  # Copy the files to the IIS root directory
-            iisreset /start  # Restart IIS to serve the new build
+  
