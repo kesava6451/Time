@@ -21,7 +21,7 @@ jobs:
       - name: List contents of build output directory
         run: dir dist/sample-angular-app  # Verify that the build has generated the files in the output folder
       - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: deploy_dist
           path: dist/sample-angular-app  # Adjust this path based on your angular.json settings
