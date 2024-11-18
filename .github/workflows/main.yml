@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: npm install  # Install all required dependencies
       - name: Build Angular project
-        run: ng build --configuration production  # Directly use Angular CLI build command
+        run: ng build  # Directly use Angular CLI build command
       - name: List contents of build output directory
         run: dir dist/sample-angular-app  # Verify that the build has generated the files in the output folder
       - name: Upload artifact for deployment job
