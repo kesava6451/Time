@@ -37,5 +37,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: angular-build
-          path: dist/sample-angular-app  # Path to your build output directory
+          path: dist/timedashboard  # Path to your build output directory
           
