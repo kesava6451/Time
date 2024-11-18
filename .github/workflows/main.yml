@@ -51,7 +51,7 @@ jobs:
 
       - name: Copy files to IIS server
         run: |
-          $sourcePath = "dist/timedashboard "  # Path to your build output folder
+          $sourcePath = "E:\Angular-Web\Timedashboard\dist\timedashboard"  # Path to your build output folder
           $targetPath = "C:\CurrentTime"  # Shared folder on your IIS server
           Copy-Item -Path "$sourcePath\*" -Destination $targetPath -Recurse -Force
 
