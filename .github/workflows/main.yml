@@ -22,25 +22,17 @@ jobs:
         run: ng build --configuration production  # Build Angular project with production config
       - name: List contents of build output directory
         run: ls -l dist/timedashboard  # Verify if the build output is in the correct directory
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v3
-        with:
-          name: angular-build
-          path: build_output/  # Path to your Angular build output directory (adjust if needed)
+   # Path to your Angular build output directory (adjust if needed)
   deploy:
     runs-on: self-hosted  # Use Windows runner for deployment
     needs: build  # Ensure that the build step is successful before starting the deployment
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: angular-build
       - name: Copy files to IIS server
         run: |
           # Adjust the source path and target path as per your system setup
-          $sourcePath = "build_output/"  # Ensure this path is correct on the runner
-          $targetPath = "C:\CurrentTime"  # IIS server path where the app should be deployed
+          $sourcePath = "C:\Users\Aadil\Documents\actions-runner\_work\Time\Time\dist"  # Ensure this path is correct on the runner
+          $targetPath = "C:\inetpub\wwwroot\timedashboard"  # IIS server path where the app should be deployed
           Copy-Item -Path "$sourcePath\*" -Destination $targetPath -Recurse -Force
       - name: Verify deployment
         run: |
-          curl http://your-iis-server-ip-or-domain/your-app-folder  # Verify that the app is deployed successfully
+          curl http://currenttime.com/timedashboard  # Verify that the app is deployed successfully
