@@ -1,4 +1,4 @@
-name: Build Node.js Application
+name: Build and Deploy Node.js Application
 
 on:
   push:
@@ -36,3 +36,36 @@ jobs:
         with:
           name: build-artifacts
           path: dist  # Assuming 'dist' is the folder containing your build output
+
+  deploy:
+    runs-on: ubuntu-latest  # Deployment job also runs on Ubuntu (You can use a Windows runner too)
+
+    needs: build  # This ensures deployment only runs after the build job completes
+
+    steps:
+      # Checkout the code again for deployment
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Download build artifacts (from the previous build step)
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      # Deploy to IIS (Windows Server)
+      - name: Deploy to IIS (Windows Server)
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.IIS_SERVER_IP }}  # Set your server's IP address in GitHub Secrets
+          username: ${{ secrets.IIS_SERVER_USER }}  # Set your server's username in GitHub Secrets
+          password: ${{ secrets.IIS_SERVER_PASSWORD }}  # Set your server's password in GitHub Secrets
+          script: |
+            cd C:/path/to/your/app  # Specify your application directory on the server
+            git pull origin master  # Pull the latest changes from your repository
+            npm install  # Install dependencies on the server
+            npm run build  # Build the app on the server (optional)
+            iisreset /stop  # Stop IIS before copying files
+            # Copy the build files to the IIS web directory (make sure IIS is pointing to this folder)
+            copy /Y dist/* C:/inetpub/wwwroot/your-app  # Adjust the destination path accordingly
+            iisreset /start  # Restart IIS to serve the new build
