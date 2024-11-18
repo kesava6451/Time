@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: npm install  # Install necessary dependencies
       - name: Build Angular project
-        run: npm run build # Ensure you're using the production build configuration for Angular 12+
+        run: ng build # Ensure you're using the production build configuration for Angular 12+
       - name: List build output directory
         run: dir dist/sample-angular-app  # List contents of the output directory to verify build
       - name: Upload artifact for deployment job
