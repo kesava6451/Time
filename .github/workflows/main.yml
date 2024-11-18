@@ -3,12 +3,12 @@ name: Build and deploy Angular app to IIS server
 on:
   push:
     branches:
-      - master
-  workflow_dispatch:
+      - master  # Trigger on push to the master branch
+  workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Use 'windows-latest' if required for your setup
+    runs-on: ubuntu-latest  # You can use 'windows-latest' if needed for Windows environment
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -16,41 +16,43 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'  # Use your Node.js version here
+          node-version: '18'
 
       - name: Install Angular CLI globally
-        run: |
-          npm install -g @angular/cli  # Install Angular CLI globally
+        run: npm install -g @angular/cli  # Install Angular CLI globally
 
       - name: Install dependencies
-        run: npm install  # Install project dependencies (including Angular CLI if not already in package.json)
+        run: npm install  # Install dependencies defined in package.json
 
       - name: Build Angular project
-        run: |
-          echo "Building Angular app with production configuration"
-          ng build --configuration production  # Build with production configuration
+        run: ng build --configuration production  # Build Angular project with production config
 
       - name: List contents of build output directory
-        run: ls -l dist/timedashboard  # Verify the build output path
+        run: ls -l dist/timedashboard  # Verify if the build output is in the correct directory
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
           name: angular-build
-          path: dist/timechampdashboard  # Path to your build output directory
+          path: dist/timedashboard  # Path to your Angular build output directory (adjust if needed)
 
   deploy:
-    runs-on: windows-latest  # Run deployment on a Windows runner
+    runs-on: windows-latest  # Use Windows runner for deployment
+    needs: build  # Ensure that the build step is successful before starting the deployment
 
-    needs: build
     steps:
-    
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: angular-build
+
       - name: Copy files to IIS server
         run: |
-          $sourcePath = "C:\actions-runner\_work\Time\dist\timechampdashboard"  # Path to your build output folder
-          $targetPath = "C:\CurrentTime"  # Shared folder on your IIS server
+          # Adjust the source path and target path as per your system setup
+          $sourcePath = "C:\actions-runner\_work\Time\dist\timedashboard"  # Ensure this path is correct on the runner
+          $targetPath = "C:\CurrentTime"  # IIS server path where the app should be deployed
           Copy-Item -Path "$sourcePath\*" -Destination $targetPath -Recurse -Force
 
       - name: Verify deployment
         run: |
-          curl http://your-iis-server-ip-or-domain/your-app-folder  # Check if the app is deployed successfully
+          curl http://your-iis-server-ip-or-domain/your-app-folder  # Verify that the app is deployed successfully
