@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest  # You can use 'windows-latest' if needed for Windows environment
+    runs-on: self-hosted  # You can use 'windows-latest' if needed for Windows environment
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -37,7 +37,7 @@ jobs:
           path: dist/timedashboard  # Path to your Angular build output directory (adjust if needed)
 
   deploy:
-    runs-on: windows-latest  # Use Windows runner for deployment
+    runs-on: self-hosted  # Use Windows runner for deployment
     needs: build  # Ensure that the build step is successful before starting the deployment
 
     steps:
