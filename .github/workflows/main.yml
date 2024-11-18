@@ -2,26 +2,26 @@ name: Build and deploy Angular app to Azure Web App — sampleangularApp
 on:
   push:
     branches:
-      - master  # Trigger workflow on push to master branch
+      - main
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2  # Checkout the repository
+      - uses: actions/checkout@v2
       - name: Set up Node.js version
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'  # Ensure compatibility with Angular CLI
+          node-version: '12.x'
       - name: Install dependencies
-        run: npm install  # Install necessary dependencies
+        run: npm install  # Install all required dependencies
       - name: Build Angular project
-        run: ng build # Ensure you're using the production build configuration for Angular 12+
-      - name: List build output directory
-        run: dir dist/sample-angular-app  # List contents of the output directory to verify build
+        run: ng build --configuration production  # Directly use Angular CLI build command
+      - name: List contents of build output directory
+        run: dir dist/sample-angular-app  # Verify that the build has generated the files in the output folder
       - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v3  # Updated to v3
+        uses: actions/upload-artifact@v2
         with:
           name: deploy_dist
-          path: dist/sample-angular-app  # Adjust path based on your angular.json settings
+          path: dist/sample-angular-app  # Adjust this path based on your angular.json settings
