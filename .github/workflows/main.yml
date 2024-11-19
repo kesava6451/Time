@@ -43,6 +43,7 @@ jobs:
           name: angular-build  # Name of the uploaded artifact
 
       - name: Deploy to IIS
+        shell: pwsh
         run: |
           # Define paths and IIS settings dynamically
           $sourcePath = "${{ github.workspace }}\browser"  # This dynamically points to the downloaded artifact
@@ -59,31 +60,32 @@ jobs:
           # Copy the files to the destination
           Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
 
-          # # Import the WebAdministration module
-          # if (-Not (Get-Module -Name WebAdministration -ListAvailable)) {
-          #     Write-Error "The WebAdministration module is not available. Ensure IIS is installed with scripting tools."
-          #     exit 1
-          # }
-          # Import-WinModule WebAdministration
-
+          # Import the WebAdministration module using WindowsCompatibility
+          if (-Not (Get-Module -Name WebAdministration -ListAvailable)) {
+              Write-Error "The WebAdministration module is not available. Ensure IIS is installed with scripting tools."
+              exit 1
+          }
+          Import-WinModule WebAdministration
 
           # Check if the application pool exists, if not, create it
-          if (-Not (Get-WebAppPoolState -Name $appPoolName -ErrorAction SilentlyContinue)) {
+          $appPoolPath = "IIS:\AppPools\$appPoolName"
+          if (-Not (Test-Path $appPoolPath)) {
             New-WebAppPool -Name $appPoolName
-            Set-ItemProperty IIS:\AppPools\$appPoolName -Name "managedPipelineMode" -Value "Integrated"  # Ensure Integrated Mode
+            Set-ItemProperty $appPoolPath -Name "managedPipelineMode" -Value "Integrated"  # Ensure Integrated Mode
           }
 
           # Check if the site exists, if not, create it
-          if (-Not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
+          $sitePath = "IIS:\Sites\$siteName"
+          if (-Not (Test-Path $sitePath)) {
             New-Website -Name $siteName -PhysicalPath $destinationPath -ApplicationPool $appPoolName -BindingInformation $bindingInfo
           } else {
             # Update the site's physical path and application pool if it already exists
-            Set-ItemProperty IIS:\Sites\$siteName -Name "physicalPath" -Value $destinationPath
-            Set-ItemProperty IIS:\Sites\$siteName -Name "applicationPool" -Value $appPoolName
+            Set-ItemProperty $sitePath -Name "physicalPath" -Value $destinationPath
+            Set-ItemProperty $sitePath -Name "applicationPool" -Value $appPoolName
           }
 
           # Verify or add the URL binding
-          $bindings = (Get-Item "IIS:\Sites\$siteName").bindings.Collection
+          $bindings = (Get-Item $sitePath).bindings.Collection
           $bindingExists = $false
           foreach ($binding in $bindings) {
             if ($binding.bindingInformation -eq $bindingInfo) {
@@ -97,3 +99,4 @@ jobs:
 
           # Restart IIS to reflect changes
           iisreset
+
