@@ -40,7 +40,23 @@ jobs:
       - name: Download build artifacts from GitHub
         uses: actions/download-artifact@v3
         with:
-          name: angular-build  # Name of the uploaded artifac
+          name: angular-build  # Name of the uploaded artifact
+
+      - name: Copy build files to IIS directory
+        run: |
+          # Define paths
+          $sourcePath = "${{ github.workspace }}\dist\timedashboard"
+          $destinationPath = "C:\Kesava\Web\Timer"
+
+          # Create the destination directory if it doesn't exist
+          if (-Not (Test-Path $destinationPath)) {
+              Write-Host "Creating directory at $destinationPath"
+              New-Item -ItemType Directory -Path $destinationPath -Force
+          }
+
+          # Copy the files to the destination
+          Write-Host "Copying files from $sourcePath to $destinationPath"
+          Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
 
       - name: Deploy to IIS
         shell: powershell
