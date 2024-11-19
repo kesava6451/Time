@@ -40,7 +40,7 @@ jobs:
       - name: Download build artifacts from GitHub
         uses: actions/download-artifact@v3
         with:
-          name: angular-build  # Name of the uploaded artifact
+          name: angular-build  # Name of the uploaded artifac
 
       - name: Deploy to IIS
         shell: powershell
@@ -50,7 +50,7 @@ jobs:
           $destinationPath = "C:\Kesava\Web\Timer"
           $siteName = "newtimer.com"  # IIS site name
           $appPoolName = "TimerAppPool"  # Application pool name
-          $bindingInfo = "http/*:80:timer.local"  # Replace with your actual binding info
+          $bindingInfo = "http/*:80:timer"  # Replace with your actual binding info
 
           # Create the destination directory if it doesn't exist
           if (-Not (Test-Path $destinationPath)) {
