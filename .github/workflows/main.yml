@@ -86,17 +86,19 @@ jobs:
           # Trim and normalize site name
           $normalizedSiteName = $siteName.Trim().ToLower()
 
-          # Site does not exist, create it
-          Write-Output "Creating new site: $siteName"
-          & "C:\Windows\System32\inetsrv\appcmd.exe" add site /name:$siteName /physicalPath:$destinationPath /bindings:$bindingInfo
-          # Set the application pool for the site
-          & "C:\Windows\System32\inetsrv\appcmd.exe" set app /app.name:"$siteName/" /applicationPool:$appPoolName
+          # Check if the site exists
+          if ($siteList.ToLower() -notmatch "\b$normalizedSiteName\b") {
+              # Site does not exist, create it
+              Write-Output "Creating new site: $siteName"
+              & "C:\Windows\System32\inetsrv\appcmd.exe" add site /name:$siteName /physicalPath:$destinationPath /bindings:$bindingInfo
+              # Set the application pool for the site
+              & "C:\Windows\System32\inetsrv\appcmd.exe" set app /app.name:"$siteName/" /applicationPool:$appPoolName
           } else {
-          # Site exists, update its properties
-          Write-Output "Site $siteName already exists. Updating its properties."
-          & "C:\Windows\System32\inetsrv\appcmd.exe" set site /site.name:$siteName /physicalPath:$destinationPath /applicationPool:$appPoolName
+              # Site exists, update its properties
+              Write-Output "Site $siteName already exists. Updating its properties."
+              & "C:\Windows\System32\inetsrv\appcmd.exe" set site /site.name:$siteName /[path='/'].[physicalPath='$destinationPath']
+              & "C:\Windows\System32\inetsrv\appcmd.exe" set app /app.name:"$siteName/" /applicationPool:$appPoolName
           }
-
 
           # Restart IIS to apply changes
           Write-Output "Restarting IIS"
