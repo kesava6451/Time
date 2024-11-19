@@ -62,7 +62,8 @@ jobs:
 
           # Import the WebAdministration module
           try {
-              Import-Module WebAdministration
+              Import-Module WebAdministration -SkipEditionCheck -ErrorAction Stop
+              Write-Output "WebAdministration module loaded successfully."
           } catch {
               Write-Error "Failed to import the WebAdministration module. Ensure IIS scripting tools are installed."
               exit 1
