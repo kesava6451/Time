@@ -57,7 +57,7 @@ jobs:
         # Define paths and IIS settings dynamically
         $sourcePath = "C:\Agent\actions-runner\_work\Time\Time\browser"  # Replace with the actual artifact path
         $destinationPath = "C:\Kesava\web\timer"
-        $siteName = "newtimer.com"  # IIS site nam
+        $siteName = "newtimer.com"  # IIS site name
         $appPoolName = "TimerAppPool"  # Application pool name
         $bindingInfo = "*:80:timer.local"  # Replace with your actual binding info
 
