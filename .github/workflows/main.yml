@@ -45,7 +45,9 @@ jobs:
       - name: Deploy to IIS
         shell: pwsh
         run: |
+          Start-Process powershell -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', "
           # Define paths and IIS settings dynamically
+          Import-Module WebAdministration -SkipEditionCheck
           $sourcePath = "${{ github.workspace }}\browser"  # Replace with the actual artifact path
           $destinationPath = "C:\Kesava\web\timer"
           $siteName = "newtimer.com"  # IIS site name
@@ -59,34 +61,3 @@ jobs:
 
           # Copy the files to the destination
           Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
-
-          # Import the WebAdministration module
-          try {
-              Import-Module WebAdministration -SkipEditionCheck -ErrorAction Stop
-              Write-Output "WebAdministration module loaded successfully."
-          } catch {
-              Write-Error "Failed to import the WebAdministration module. Ensure IIS scripting tools are installed."
-              exit 1
-          }
-
-
-          try {
-          # Check if the application pool exists using Get-WebAppPoolState
-          $appPoolExists = Get-WebAppPoolState -Name $appPoolName -ErrorAction SilentlyContinue
-
-          if ($appPoolExists) {
-          # Access and update properties of the existing application pool
-          Write-Output "Accessing the existing application pool: $appPoolName"
-          Set-ItemProperty -Path "IIS:\ApplicationPools\$appPoolName" -Name "managedPipelineMode" -Value "Integrated"
-          Write-Output "Updated the existing application pool: $appPoolName"
-          } else {
-          # Create a new application pool if it doesn't exist
-          Write-Output "Application pool $appPoolName does not exist. Creating it..."
-          New-WebAppPool -Name $appPoolName
-          Set-ItemProperty -Path "IIS:\ApplicationPools\$appPoolName" -Name "managedPipelineMode" -Value "Integrated"
-          Write-Output "Created a new application pool: $appPoolName"
-          }
-          } catch {
-          Write-Error "An error occurred: $($_.Exception.Message)"
-            exit 1
-          }
