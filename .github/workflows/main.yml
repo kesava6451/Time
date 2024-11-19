@@ -43,7 +43,7 @@ jobs:
           name: angular-build  # Name of the uploaded artifact
 
       - name: Deploy to IIS
-        shell: pwsh
+        shell: powershell
         run: |
           # Define paths and IIS settings dynamically
           $sourcePath = "${{ github.workspace }}\browser"  # Replace with the actual artifact path
@@ -68,6 +68,21 @@ jobs:
               Write-Output "WebAdministration module loaded successfully in compatibility mode."
           } catch {
               Write-Error "Failed to import the WebAdministration module in compatibility mode."
+              exit 1
+          }
+
+          # Ensure the IIS drive is available
+          try {
+              if (-Not (Get-PSDrive -Name IIS -ErrorAction SilentlyContinue)) {
+                  Write-Output "Loading WebAdministration module..."
+                  Import-Module WebAdministration -ErrorAction Stop
+              }
+              if (-Not (Get-PSDrive -Name IIS -ErrorAction SilentlyContinue)) {
+                  Write-Error "The IIS drive is not available. Ensure IIS is installed and the WebAdministration module is loaded."
+                  exit 1
+              }
+          } catch {
+              Write-Error "Failed to load the WebAdministration module: $_"
               exit 1
           }
 
