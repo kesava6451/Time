@@ -69,7 +69,7 @@ jobs:
           }
 
           # Check if the application pool exists
-          $appPoolPath = "IIS:\ApplicationPools\$appPoolName"
+          $appPoolPath = "IIS:\Application Pools\$appPoolName"
           if (Test-Path $appPoolPath) {
               # Update properties of the existing application pool
               Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"
