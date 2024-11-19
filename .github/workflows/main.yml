@@ -46,7 +46,7 @@ jobs:
         shell: pwsh
         run: |
           # Define paths and IIS settings dynamically
-          $sourcePath = "C:\Agent\actions-runner\_work\Time\Time\browser"  # Replace with the actual artifact path
+          $sourcePath = "${{ github.workspace }}\browser"  # Replace with the actual artifact path
           $destinationPath = "C:\Kesava\web\timer"
           $siteName = "newtimer.com"  # IIS site name
           $appPoolName = "TimerAppPool"  # Application pool name
@@ -69,7 +69,7 @@ jobs:
           }
 
           # Check if the application pool exists
-          $appPoolPath = "IIS:\ApplicationPools\$appPoolName"
+          $appPoolPath = "IIS:\AppPools\$appPoolName"
 
           if (Test-Path $appPoolPath) {
           # Access and update properties of the existing application pool
