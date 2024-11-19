@@ -40,15 +40,15 @@ jobs:
       - name: Download build artifacts from GitHub
         uses: actions/download-artifact@v3
         with:
-          name: angular-build  # Name of the uploaded artifact
+          name: angular-build  # Name of the uploaded artifac
 
       - name: Deploy to IIS
         shell: pwsh
         run: |
           Import-Module WebAdministration
-          $siteName = 'CurrentTime'
+          $siteName = 'TimeApp'
           $physicalPath = 'C:\Kesava\Web\Timer'
-          $port = 80
+          $port = 88
 
           # Check if the site exists
           if (!(Get-Website | Where-Object { $_.Name -eq $siteName })) {
