@@ -74,12 +74,12 @@ jobs:
           #     exit 1
           # }
 
-          # # Check if the application pool exists, if not, create it
-          # $appPoolPath = "IIS:\AppPools\$appPoolName"
-          # if (-Not (Test-Path $appPoolPath)) {
-          #     New-WebAppPool -Name $appPoolName
-          #     Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"  # Ensure Integrated Mode
-          # }
+          # Check if the application pool exists, if not, create it
+          $appPoolPath = "IIS:\ApplicationPools\$appPoolName"
+          if (-Not (Test-Path $appPoolPath)) {
+              New-WebAppPool -Name $appPoolName
+              Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"  # Ensure Integrated Mode
+          }
 
           # Check if the site exists, if not, create it
           $sitePath = "IIS:\Sites\$siteName"
