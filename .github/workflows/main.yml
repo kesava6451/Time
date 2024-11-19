@@ -51,7 +51,6 @@ jobs:
           $siteName = "newtimer.com"  # IIS site name
           $appPoolName = "TimerAppPool"  # Application pool name
           $bindingInfo = "*:80:timer.local"  # Replace with your actual binding info
-          $appPoolPath = "IIS:\AppPools\$appPoolName"
 
           # Create the destination directory if it doesn't exist
           if (-Not (Test-Path $destinationPath)) {
@@ -61,47 +60,37 @@ jobs:
           # Copy the files to the destination
           Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
 
-          # Import the WebAdministration module
-          try {
-              Import-Module -Name WindowsCompatibility -ErrorAction Stop
-              Import-WinModule -Name WebAdministration
-              Write-Output "WebAdministration module loaded successfully in compatibility mode."
-          } catch {
-              Write-Error "Failed to import the WebAdministration module in compatibility mode."
+          # Ensure IIS and AppCmd is available
+          if (-Not (Test-Path "C:\Windows\System32\inetsrv\appcmd.exe")) {
+              Write-Error "AppCmd not found. Ensure IIS is installed with management tools."
               exit 1
           }
 
-          # Ensure the IIS drive is available
-          try {
-              if (-Not (Get-PSDrive -Name IIS -ErrorAction SilentlyContinue)) {
-                  Write-Output "Loading WebAdministration module..."
-                  Import-Module WebAdministration -ErrorAction Stop
-              }
-              if (-Not (Get-PSDrive -Name IIS -ErrorAction SilentlyContinue)) {
-                  Write-Error "The IIS drive is not available. Ensure IIS is installed and the WebAdministration module is loaded."
-                  exit 1
-              }
-          } catch {
-              Write-Error "Failed to load the WebAdministration module: $_"
-              exit 1
+          # Check if application pool exists using AppCmd
+          $appPoolCheck = & "C:\Windows\System32\inetsrv\appcmd.exe" list apppool /name:$appPoolName
+          if ($appPoolCheck -match "ERROR") {
+              # Application pool does not exist, create it
+              Write-Output "Creating a new application pool: $appPoolName"
+              & "C:\Windows\System32\inetsrv\appcmd.exe" add apppool /name:$appPoolName /managedPipelineMode:Integrated
+          } else {
+              Write-Output "Application pool $appPoolName already exists."
           }
 
-          # Check and manage the application pool
-          try {
-              if (Test-Path $appPoolPath) {
-                  # Application pool exists, update its properties
-                  Write-Output "Accessing the existing application pool: $appPoolName"
-                  Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"
-                  Write-Output "Updated the existing application pool: $appPoolName"
-              } else {
-                  # Create a new application pool
-                  Write-Output "Creating a new application pool: $appPoolName"
-                  New-WebAppPool -Name $appPoolName -Force
-                  Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"
-                  Write-Output "Created a new application pool: $appPoolName"
-              }
-          } catch {
-              # Handle errors
-              Write-Error "An error occurred while managing the application pool: $_"
-              exit 1
+          # Ensure the application pool properties are updated
+          Write-Output "Updating application pool settings for: $appPoolName"
+          & "C:\Windows\System32\inetsrv\appcmd.exe" set apppool /apppool.name:$appPoolName /managedPipelineMode:Integrated
+
+          # Check if the site exists
+          $siteCheck = & "C:\Windows\System32\inetsrv\appcmd.exe" list site /name:$siteName
+          if ($siteCheck -match "ERROR") {
+              # Site does not exist, create it
+              Write-Output "Creating new site: $siteName"
+              & "C:\Windows\System32\inetsrv\appcmd.exe" add site /name:$siteName /physicalPath:$destinationPath /bindings:$bindingInfo /applicationPool:$appPoolName
+          } else {
+              Write-Output "Site $siteName already exists. Updating its properties."
+              & "C:\Windows\System32\inetsrv\appcmd.exe" set site /site.name:$siteName /physicalPath:$destinationPath /applicationPool:$appPoolName
           }
+
+          # Restart IIS to apply changes
+          Write-Output "Restarting IIS"
+          iisreset
