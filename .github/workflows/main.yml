@@ -60,7 +60,12 @@ jobs:
           Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
 
           # Import the WebAdministration module
+          if (-Not (Get-Module -Name WebAdministration -ListAvailable)) {
+              Write-Error "The WebAdministration module is not available. Ensure IIS is installed with scripting tools."
+              exit 1
+          }
           Import-Module WebAdministration
+
 
           # Check if the application pool exists, if not, create it
           if (-Not (Get-WebAppPoolState -Name $appPoolName -ErrorAction SilentlyContinue)) {
