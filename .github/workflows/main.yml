@@ -47,7 +47,7 @@ jobs:
         run: |
           # Define paths and IIS settings dynamically
           $sourcePath = "${{ github.workspace }}\browser"  # Replace with the actual artifact path
-          $destinationPath = "C:\Kesava\web\timer\"
+          $destinationPath = "C:\Kesava\Web\Timer"
           $siteName = "newtimer.com"  # IIS site name
           $appPoolName = "TimerAppPool"  # Application pool name
           $bindingInfo = "http/*:80:timer.local"  # Replace with your actual binding info
