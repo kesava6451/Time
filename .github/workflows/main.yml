@@ -60,13 +60,13 @@ jobs:
           # Copy the files to the destination
           Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
 
-          # # Import the WebAdministration module using WindowsCompatibility
-          # try {
-          #     Import-WinModule WebAdministration -ErrorAction Stop
-          # } catch {
-          #     Write-Error "Failed to import the WebAdministration module. Ensure IIS scripting tools are installed."
-          #     exit 1
-          # }
+          # Import the WebAdministration module using WindowsCompatibility
+          try {
+              Import-WinModule WebAdministration -ErrorAction Stop
+          } catch {
+              Write-Error "Failed to import the WebAdministration module. Ensure IIS scripting tools are installed."
+              exit 1
+          }
 
           # # Verify the IIS drive is available
           # if (-Not (Get-PSDrive -Name IIS -ErrorAction SilentlyContinue)) {
