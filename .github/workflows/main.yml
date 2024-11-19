@@ -80,16 +80,23 @@ jobs:
           Write-Output "Updating application pool settings for: $appPoolName"
           & "C:\Windows\System32\inetsrv\appcmd.exe" set apppool /apppool.name:$appPoolName /managedPipelineMode:Integrated
 
+          # List all sites
+          $siteList = & "C:\Windows\System32\inetsrv\appcmd.exe" list site
+
+          # Trim and normalize site name
+          $normalizedSiteName = $siteName.Trim().ToLower()
+
           # Check if the site exists
-          $siteCheck = & "C:\Windows\System32\inetsrv\appcmd.exe" list site /name:$siteName
-          if ($siteCheck -match "ERROR") {
-              # Site does not exist, create it
-              Write-Output "Creating new site: $siteName"
-              & "C:\Windows\System32\inetsrv\appcmd.exe" add site /name:$siteName /physicalPath:$destinationPath /bindings:$bindingInfo /applicationPool:$appPoolName
+          if ($siteList.ToLower() -notmatch "\b$normalizedSiteName\b") {
+          # Site does not exist, create it
+          Write-Output "Creating new site: $siteName"
+          & "C:\Windows\System32\inetsrv\appcmd.exe" add site /name:$siteName /physicalPath:$destinationPath /bindings:$bindingInfo /applicationPool:$appPoolName
           } else {
-              Write-Output "Site $siteName already exists. Updating its properties."
-              & "C:\Windows\System32\inetsrv\appcmd.exe" set site /site.name:$siteName /physicalPath:$destinationPath /applicationPool:$appPoolName
+          # Site exists, update its properties
+          Write-Output "Site $siteName already exists. Updating its properties."
+          & "C:\Windows\System32\inetsrv\appcmd.exe" set site /site.name:$siteName /physicalPath:$destinationPath /applicationPool:$appPoolName
           }
+
 
           # Restart IIS to apply changes
           Write-Output "Restarting IIS"
