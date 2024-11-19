@@ -33,21 +33,23 @@ jobs:
           name: angular-build
           path: dist/timedashboard  # Path to your Angular build output directory
 
-       - name: Deploy to IIS
-        run: |
-          # Import the WebAdministration module with SkipEditionCheck for PowerShell Core
-          if (-Not (Get-Module -Name WebAdministration -ListAvailable)) {
-              Write-Error "The WebAdministration module is not available. Ensure IIS is installed with scripting tools."
-              exit 1
-          }
-          Import-Module WebAdministration -SkipEditionCheck
+  deploy:
+    runs-on: self-hosted  # Use a self-hosted runner for deployment
+    needs: build  # Ensure the build step is successful before starting the deployment
+    steps:
+      - name: Download build artifacts from GitHub
+        uses: actions/download-artifact@v3
+        with:
+          name: angular-build  # Name of the uploaded artifact
 
+      - name: Deploy to IIS
+        run: |
           # Define paths and IIS settings dynamically
-          $sourcePath = "${{ github.workspace }}\browser"
+          $sourcePath = "${{ github.workspace }}\browser"  # This dynamically points to the downloaded artifact
           $destinationPath = "C:\Kesava\web\timer"
-          $siteName = "newtimer.com"
-          $appPoolName = "TimerAppPool"
-          $bindingInfo = "*:80:timer.local"
+          $siteName = "newtimer.com"  # IIS site name
+          $appPoolName = "TimerAppPool"  # Application pool name
+          $bindingInfo = "*:80:timer.local"  # Replace with your actual binding info
 
           # Create the destination directory if it doesn't exist
           if (-Not (Test-Path $destinationPath)) {
@@ -57,10 +59,18 @@ jobs:
           # Copy the files to the destination
           Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
 
+          # Import the WebAdministration module
+          if (-Not (Get-Module -Name WebAdministration -ListAvailable)) {
+              Write-Error "The WebAdministration module is not available. Ensure IIS is installed with scripting tools."
+              exit 1
+          }
+          Import-WinModule WebAdministration
+
+
           # Check if the application pool exists, if not, create it
           if (-Not (Get-WebAppPoolState -Name $appPoolName -ErrorAction SilentlyContinue)) {
             New-WebAppPool -Name $appPoolName
-            Set-ItemProperty IIS:\AppPools\$appPoolName -Name "managedPipelineMode" -Value "Integrated"
+            Set-ItemProperty IIS:\AppPools\$appPoolName -Name "managedPipelineMode" -Value "Integrated"  # Ensure Integrated Mode
           }
 
           # Check if the site exists, if not, create it
