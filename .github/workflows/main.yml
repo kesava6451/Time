@@ -45,61 +45,20 @@ jobs:
       - name: Deploy to IIS
         shell: powershell
         run: |
-          # Define paths and IIS settings dynamically
-          $sourcePath = "${{ github.workspace }}\browser"  # Replace with the actual artifact path
-          $destinationPath = "C:\Kesava\Web\Timer"
-          $siteName = "newtimer.com"  # IIS site name
-          $appPoolName = "TimerAppPool"  # Application pool name
-          $bindingInfo = "http/*:80:timer"  # Replace with your actual binding info
+        Import-Module WebAdministration
+        $siteName = 'CurrentTime'
+        $physicalPath = 'C:\Kesava\Web\Timer'
+        $port = 80
 
-          # Create the destination directory if it doesn't exist
-          if (-Not (Test-Path $destinationPath)) {
-              New-Item -ItemType Directory -Path $destinationPath -Force
-          }
+        # Check if the site exists
+        if (!(Get-Website | Where-Object { $_.Name -eq $siteName })) {
+          Write-Host "Creating new IIS site: $siteName"
+          New-Website -Name $siteName -PhysicalPath $physicalPath -Port $port -ApplicationPool 'DefaultAppPool'
+        } else {
+          Write-Host "IIS site $siteName already exists. Updating physical path."
+          Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $physicalPath
+        }
 
-          # Copy the files to the destination
-          Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
-
-          # Ensure IIS and AppCmd is available
-          if (-Not (Test-Path "C:\Windows\System32\inetsrv\appcmd.exe")) {
-              Write-Error "AppCmd not found. Ensure IIS is installed with management tools."
-              exit 1
-          }
-
-          # Check if application pool exists using AppCmd
-          $appPoolCheck = & "C:\Windows\System32\inetsrv\appcmd.exe" list apppool /name:$appPoolName
-          if ($appPoolCheck -match "ERROR") {
-              # Application pool does not exist, create it
-              Write-Output "Creating a new application pool: $appPoolName"
-              & "C:\Windows\System32\inetsrv\appcmd.exe" add apppool /name:$appPoolName /managedPipelineMode:Integrated
-          } else {
-              Write-Output "Application pool $appPoolName already exists."
-          }
-
-          # Ensure the application pool properties are updated
-          Write-Output "Updating application pool settings for: $appPoolName"
-          & "C:\Windows\System32\inetsrv\appcmd.exe" set apppool /apppool.name:$appPoolName /managedPipelineMode:Integrated
-
-          # List all sites
-          $siteList = & "C:\Windows\System32\inetsrv\appcmd.exe" list site
-
-          # Trim and normalize site name
-          $normalizedSiteName = $siteName.Trim().ToLower()
-
-          # Check if the site exists
-          if ($siteList.ToLower() -notmatch "\b$normalizedSiteName\b") {
-              # Site does not exist, create it
-              Write-Output "Creating new site: $siteName"
-              & "C:\Windows\System32\inetsrv\appcmd.exe" add site /name:$siteName /physicalPath:$destinationPath /bindings:$bindingInfo
-              # Set the application pool for the site
-              & "C:\Windows\System32\inetsrv\appcmd.exe" set app /app.name:"$siteName/" /applicationPool:$appPoolName
-          } else {
-              # Site exists, update its properties
-              Write-Output "Site $siteName already exists. Updating its properties."
-              & "C:\Windows\System32\inetsrv\appcmd.exe" set site /site.name:$siteName /[path='/'].[physicalPath='$destinationPath']
-              & "C:\Windows\System32\inetsrv\appcmd.exe" set app /app.name:"$siteName/" /applicationPool:$appPoolName
-          }
-
-          # Restart IIS to apply changes
-          Write-Output "Restarting IIS"
-          iisreset
+        # Ensure the site is running
+        Start-Website -Name $siteName
+      shell: pwsh
