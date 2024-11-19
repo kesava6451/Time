@@ -46,7 +46,7 @@ jobs:
         shell: pwsh
         run: |
           # Define paths and IIS settings dynamically
-          $sourcePath = "${{ github.workspace }}\browser"  # This dynamically points to the downloaded artifact
+          $sourcePath = "C:\Agent\actions-runner\_work\Time\Time\browser"  # Replace with the actual artifact path
           $destinationPath = "C:\Kesava\web\timer"
           $siteName = "newtimer.com"  # IIS site name
           $appPoolName = "TimerAppPool"  # Application pool name
@@ -54,48 +54,55 @@ jobs:
 
           # Create the destination directory if it doesn't exist
           if (-Not (Test-Path $destinationPath)) {
-            New-Item -ItemType Directory -Path $destinationPath
+              New-Item -ItemType Directory -Path $destinationPath -Force
           }
 
           # Copy the files to the destination
           Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
 
           # Import the WebAdministration module using WindowsCompatibility
-          if (-Not (Get-Module -Name WebAdministration -ListAvailable)) {
-              Write-Error "The WebAdministration module is not available. Ensure IIS is installed with scripting tools."
+          try {
+              Import-WinModule WebAdministration -ErrorAction Stop
+          } catch {
+              Write-Error "Failed to import the WebAdministration module. Ensure IIS scripting tools are installed."
               exit 1
           }
-          Import-WinModule WebAdministration
+
+          # Verify the IIS drive is available
+          if (-Not (Get-PSDrive -Name IIS -ErrorAction SilentlyContinue)) {
+              Write-Error "The IIS drive is not available. Ensure IIS is properly configured."
+              exit 1
+          }
 
           # Check if the application pool exists, if not, create it
           $appPoolPath = "IIS:\AppPools\$appPoolName"
           if (-Not (Test-Path $appPoolPath)) {
-            New-WebAppPool -Name $appPoolName
-            Set-ItemProperty $appPoolPath -Name "managedPipelineMode" -Value "Integrated"  # Ensure Integrated Mode
+              New-WebAppPool -Name $appPoolName
+              Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"  # Ensure Integrated Mode
           }
 
           # Check if the site exists, if not, create it
           $sitePath = "IIS:\Sites\$siteName"
           if (-Not (Test-Path $sitePath)) {
-            New-Website -Name $siteName -PhysicalPath $destinationPath -ApplicationPool $appPoolName -BindingInformation $bindingInfo
+              New-Website -Name $siteName -PhysicalPath $destinationPath -ApplicationPool $appPoolName -BindingInformation $bindingInfo
           } else {
-            # Update the site's physical path and application pool if it already exists
-            Set-ItemProperty $sitePath -Name "physicalPath" -Value $destinationPath
-            Set-ItemProperty $sitePath -Name "applicationPool" -Value $appPoolName
+              # Update the site's physical path and application pool if it already exists
+              Set-ItemProperty -Path $sitePath -Name "physicalPath" -Value $destinationPath
+              Set-ItemProperty -Path $sitePath -Name "applicationPool" -Value $appPoolName
           }
 
           # Verify or add the URL binding
           $bindings = (Get-Item $sitePath).bindings.Collection
           $bindingExists = $false
           foreach ($binding in $bindings) {
-            if ($binding.bindingInformation -eq $bindingInfo) {
-              $bindingExists = $true
-              break
-            }
+              if ($binding.bindingInformation -eq $bindingInfo) {
+                  $bindingExists = $true
+                  break
+              }
           }
           if (-Not $bindingExists) {
-            New-WebBinding -Name $siteName -IPAddress "*" -Port 80 -HostHeader "timer.local"
+              New-WebBinding -Name $siteName -IPAddress "*" -Port 80 -HostHeader "timer.local"
           }
 
-          # Restart IIS to reflect changes
+          # Restart IIS to apply changes
           iisreset
