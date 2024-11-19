@@ -43,7 +43,7 @@ jobs:
           name: angular-build  # Name of the uploaded artifac
 
       - name: Deploy to IIS
-        shell: pwsh
+        shell: powershell
         run: |
           Import-Module WebAdministration
           $siteName = 'TimeApp'
