@@ -62,7 +62,7 @@ jobs:
 
           # Import the WebAdministration module
           try {
-              Import-WinModule WebAdministration -ErrorAction Stop
+              Import-Module WebAdministration
           } catch {
               Write-Error "Failed to import the WebAdministration module. Ensure IIS scripting tools are installed."
               exit 1
