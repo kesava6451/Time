@@ -67,3 +67,18 @@ jobs:
               Write-Error "Failed to import the WebAdministration module. Ensure IIS scripting tools are installed."
               exit 1
           }
+
+          # Check if the application pool exists
+          $appPoolPath = "IIS:\ApplicationPools\$appPoolName"
+
+          if (Test-Path $appPoolPath) {
+          # Access and update properties of the existing application pool
+          Write-Output "Accessing the existing application pool: $appPoolName"
+          Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"
+          Write-Output "Updated the existing application pool: $appPoolName"
+          } else {
+          # Create a new application pool if it doesn't exist
+          New-WebAppPool -Name $appPoolName
+          Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"
+          Write-Output "Created a new application pool: $appPoolName"
+          }
