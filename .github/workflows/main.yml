@@ -45,7 +45,7 @@ jobs:
       - name: Copy build files to IIS directory
         run: |
           # Define paths
-          $sourcePath = "${{ github.workspace }}\browser"
+          $sourcePath = "${{ github.workspace }}\angular-build"
           $destinationPath = "C:\Kesava\Web\Timer"
 
           # Create the destination directory if it doesn't exist
