@@ -46,7 +46,7 @@ jobs:
         shell: pwsh
         run: |
           # Define paths and IIS settings dynamically
-          $sourcePath = "$(Get-Location)\angular-build"  # Use downloaded artifact path
+          $sourcePath = "${{ github.workspace }}\angular-build"  # Use downloaded artifact path
           $destinationPath = "C:\Kesava\web\timer"
           $siteName = "newtimer.com"
           $appPoolName = "TimerAppPool"
