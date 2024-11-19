@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest  # You can use 'windows-latest' for a Windows environment
+    runs-on: windows-latest  # Use Windows environment
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -19,75 +19,66 @@ jobs:
           node-version: '18'
 
       - name: Install Angular CLI globally
-        run: npm install -g @angular/cli  # Install Angular CLI globally
+        run: npm install -g @angular/cli
 
       - name: Install dependencies
-        run: npm install  # Install dependencies defined in package.json
+        run: npm install
 
       - name: Build Angular project
-        run: ng build --configuration production  # Build Angular project with production config
+        run: ng build --configuration production
 
       - name: Upload build artifacts to GitHub
         uses: actions/upload-artifact@v3
         with:
           name: angular-build
-          path: dist/timedashboard  # Path to your Angular build output directory
+          path: dist/timedashboard
 
   deploy:
     runs-on: self-hosted  # Use a self-hosted runner for deployment
-    needs: build  # Ensure the build step is successful before starting the deployment
+    needs: build
     steps:
       - name: Download build artifacts from GitHub
         uses: actions/download-artifact@v3
         with:
-          name: angular-build  # Name of the uploaded artifact
+          name: angular-build
 
       - name: Deploy to IIS
         shell: pwsh
         run: |
-        # Import WebAdministration module
-        try {
-        Import-Module WebAdministration -SkipEditionCheck -ErrorAction Stop
-        Write-Output "WebAdministration module loaded successfully."
-        } catch {
-        Write-Error "Failed to import WebAdministration module: $($_.Exception.Message)"
-        exit 1
-        }
+          # Define paths and IIS settings dynamically
+          $sourcePath = "$(Get-Location)\angular-build"  # Use downloaded artifact path
+          $destinationPath = "C:\Kesava\web\timer"
+          $siteName = "newtimer.com"
+          $appPoolName = "TimerAppPool"
+          $bindingInfo = "*:80:timer.local"
 
-        # Define paths and IIS settings dynamically
-        $sourcePath = "C:\Agent\actions-runner\_work\Time\Time\browser"  # Replace with the actual artifact path
-        $destinationPath = "C:\Kesava\web\timer"
-        $siteName = "newtimer.com"  # IIS site name
-        $appPoolName = "TimerAppPool"  # Application pool name
-        $bindingInfo = "*:80:timer.local"  # Replace with your actual binding info
+          # Create the destination directory if it doesn't exist
+          if (-Not (Test-Path $destinationPath)) {
+              New-Item -ItemType Directory -Path $destinationPath -Force
+          }
 
-        # Create the destination directory if it doesn't exist
-        if (-Not (Test-Path $destinationPath)) {
-        New-Item -ItemType Directory -Path $destinationPath -Force
-        }
+          # Copy the files to the destination
+          Write-Output "Copying files from $sourcePath to $destinationPath"
+          Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
 
-        # Copy the files to the destination
-        Write-Output "Copying files to $destinationPath"
-        Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
+          # Ensure the application pool exists
+          if (!(Get-Item "IIS:\ApplicationPools\$appPoolName" -ErrorAction SilentlyContinue)) {
+              Write-Output "Creating new application pool: $appPoolName"
+              New-WebAppPool -Name $appPoolName
+          } else {
+              Write-Output "Application pool $appPoolName already exists."
+          }
 
-        # Ensure the application pool exists
-        if (!(Get-Item "IIS:\ApplicationPools\$appPoolName" -ErrorAction SilentlyContinue)) {
-        Write-Output "Creating new application pool: $appPoolName"
-        New-WebAppPool -Name $appPoolName
-        } else {
-        Write-Output "Application pool $appPoolName already exists."
-        }
+          # Check if the site exists
+          if (!(Get-Website | Where-Object { $_.Name -eq $siteName })) {
+              Write-Output "Creating new IIS site: $siteName"
+              New-Website -Name $siteName -PhysicalPath $destinationPath -ApplicationPool $appPoolName -BindingInformation $bindingInfo
+          } else {
+              Write-Output "IIS site $siteName already exists. Updating physical path and application pool."
+              Set-ItemProperty -Path "IIS:\Sites\$siteName" -Name physicalPath -Value $destinationPath
+              Set-ItemProperty -Path "IIS:\Sites\$siteName" -Name applicationPool -Value $appPoolName
+          }
 
-        # Check if the site exists
-        if (!(Get-Website | Where-Object { $_.Name -eq $siteName })) {
-        Write-Output "Creating new IIS site: $siteName"
-        New-Website -Name $siteName -PhysicalPath $destinationPath -ApplicationPool $appPoolName -BindingInformation $bindingInfo
-        } else {
-        Write-Output "IIS site $siteName already exists. Updating physical path."
-        Set-ItemProperty -Path "IIS:\Sites\$siteName" -Name physicalPath -Value $destinationPath
-        Set-ItemProperty -Path "IIS:\Sites\$siteName" -Name applicationPool -Value $appPoolName
-        }
-
-        # Ensure the site is running
-        Write-Output "Starting IIS site: $siteName"
-        Start-Website -Name $siteName
+          # Ensure the site is running
+          Write-Output "Starting IIS site: $siteName"
+          Start-Website -Name $siteName
