@@ -40,7 +40,7 @@ jobs:
       - name: Download build artifacts from GitHub
         uses: actions/download-artifact@v3
         with:
-          name: angular-build  # Name of the uploaded artifac
+          name: angular-build  # Name of the uploaded artifact
 
       - name: Deploy to IIS
         shell: pwsh
