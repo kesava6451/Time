@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest  # You can use 'windows-latest' for a Windows environment
+    runs-on: windows-latest  # Use 'windows-latest' for a Windows environment
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -40,7 +40,7 @@ jobs:
       - name: Download build artifacts from GitHub
         uses: actions/download-artifact@v3
         with:
-          name: angular-build  # Name of the uploaded artifac
+          name: angular-build  # Name of the uploaded artifact
 
       - name: Deploy to IIS
         shell: pwsh
@@ -51,6 +51,7 @@ jobs:
           $siteName = "newtimer.com"  # IIS site name
           $appPoolName = "TimerAppPool"  # Application pool name
           $bindingInfo = "*:80:timer.local"  # Replace with your actual binding info
+          $appPoolPath = "IIS:\AppPools\$appPoolName"
 
           # Create the destination directory if it doesn't exist
           if (-Not (Test-Path $destinationPath)) {
@@ -61,29 +62,31 @@ jobs:
           Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
 
           # Import the WebAdministration module
-           try {
-                Import-Module -Name WindowsCompatibility -ErrorAction Stop
-                Import-WinModule -Name WebAdministration
-                Write-Output "WebAdministration module loaded successfully in compatibility mode."
+          try {
+              Import-Module -Name WindowsCompatibility -ErrorAction Stop
+              Import-WinModule -Name WebAdministration
+              Write-Output "WebAdministration module loaded successfully in compatibility mode."
           } catch {
-                Write-Error "Failed to import the WebAdministration module in compatibility mode."
-                exit 1
+              Write-Error "Failed to import the WebAdministration module in compatibility mode."
+              exit 1
           }
 
-          # Check if the application pool exists
-          $appPoolPath = "IIS:\AppPools\$appPoolName"
+          # Check and manage the application pool
           try {
               if (Test-Path $appPoolPath) {
-              Write-Output "Accessing the existing application pool: $appPoolName"
-              Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"
-              Write-Output "Updated the existing application pool: $appPoolName"
+                  # Application pool exists, update its properties
+                  Write-Output "Accessing the existing application pool: $appPoolName"
+                  Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"
+                  Write-Output "Updated the existing application pool: $appPoolName"
               } else {
-              Write-Output "Creating a new application pool: $appPoolName"
-              New-WebAppPool -Name $appPoolName
-              Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"
-              Write-Output "Created a new application pool: $appPoolName"
+                  # Create a new application pool
+                  Write-Output "Creating a new application pool: $appPoolName"
+                  New-WebAppPool -Name $appPoolName -Force
+                  Set-ItemProperty -Path $appPoolPath -Name "managedPipelineMode" -Value "Integrated"
+                  Write-Output "Created a new application pool: $appPoolName"
               }
-              } catch {
+          } catch {
+              # Handle errors
               Write-Error "An error occurred while managing the application pool: $_"
               exit 1
-              }
+          }
