@@ -62,9 +62,9 @@ jobs:
         shell: powershell
         run: |
           Import-Module WebAdministration
-          $siteName = 'TimeApp'
+          $siteName = 'currenttime'
           $physicalPath = 'C:\Kesava\Web\Timer'
-          $port = 88
+          $port = 80
 
           # Check if the site exists
           if (!(Get-Website | Where-Object { $_.Name -eq $siteName })) {
