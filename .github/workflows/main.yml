@@ -68,10 +68,10 @@ jobs:
       - name: Deploy to IIS
         shell: powershell
         run: |
-          Import-Module WebAdministration 
+          Import-Module WebAdministration
           $siteName = 'TimeApp'
           $physicalPath = 'C:\Kesava\Web\Timer'
-          $port = 80
+          $port = 82
           $hostHeader = 'currenttime.com'
 
           # Check if the site exists
