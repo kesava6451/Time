@@ -46,7 +46,7 @@ jobs:
         shell: powershell
         run: |
           # Define paths
-          $sourcePath = "${{ github.workspace }}\browser"  # Corrected source path
+          $sourcePath = "${{ github.workspace }}\browser"  # Correct source path
           $destinationPath = "C:\Kesava\Web\Timer"
 
           # Validate source path
@@ -87,12 +87,14 @@ jobs:
               Write-Host "IIS site $siteName already exists. Updating physical path."
               Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $physicalPath
 
-              # Update bindings for port 88
-              Write-Host "Ensuring the site is bound to port $port"
-              Get-WebBinding -Name $siteName | Where-Object { $_.bindingInformation -eq "*:88:*" } | ForEach-Object {
-                  Remove-WebBinding -Name $siteName -BindingInformation $_.bindingInformation -Protocol http
+              # Check and update bindings
+              $bindingExists = Get-WebBinding -Name $siteName | Where-Object { $_.bindingInformation -eq "*:$port:*" }
+              if ($bindingExists) {
+                  Write-Host "Binding for port $port already exists. Skipping binding creation."
+              } else {
+                  Write-Host "Adding binding for port $port"
+                  New-WebBinding -Name $siteName -Protocol http -IPAddress * -Port $port
               }
-              New-WebBinding -Name $siteName -Protocol http -IPAddress * -Port $port
           }
 
           # Ensure the application pool is running
