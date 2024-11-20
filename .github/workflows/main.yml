@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest  # Use 'windows-latest' for a Windows environment
+    runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -31,10 +31,10 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: angular-build
-          path: dist/timedashboard  # Adjust path if your build output folder is different
+          path: dist/timedashboard  # Ensure this matches your Angular output directory
 
   deploy:
-    runs-on: self-hosted  # Use a self-hosted runner for deployment
+    runs-on: self-hosted
     needs: build
     steps:
       - name: Download build artifacts from GitHub
@@ -46,8 +46,14 @@ jobs:
         shell: powershell
         run: |
           # Define paths
-          $sourcePath = "${{ github.workspace }}\browser"
+          $sourcePath = "${{ github.workspace }}\dist\timedashboard"  # Adjust if necessary
           $destinationPath = "C:\Kesava\Web\Timer"
+
+          # Validate source path
+          if (-Not (Test-Path $sourcePath)) {
+              Write-Error "Source path $sourcePath does not exist. Verify the build process and artifact path."
+              exit 1
+          }
 
           # Create the destination directory if it doesn't exist
           if (-Not (Test-Path $destinationPath)) {
@@ -62,7 +68,12 @@ jobs:
       - name: Deploy to IIS
         shell: powershell
         run: |
-          Import-Module WebAdministration
+          Import-Module WebAdministration -ErrorAction SilentlyContinue
+          if (-Not (Get-Command "New-Website" -ErrorAction SilentlyContinue)) {
+              Write-Error "WebAdministration module is not available on this machine. Ensure IIS and its management tools are installed."
+              exit 1
+          }
+
           $siteName = 'TimeApp'
           $physicalPath = 'C:\Kesava\Web\Timer'
           $port = 80
@@ -78,9 +89,9 @@ jobs:
 
             # Update bindings if necessary
             $bindings = Get-WebBinding -Name $siteName
-            if (!($bindings | Where-Object { $_.bindingInformation -eq "*:$port:$hostHeader" })) {
+            if (!($bindings | Where-Object { $_.bindingInformation -eq "*:${port}:${hostHeader}" })) {
               Write-Host "Updating binding for $siteName"
-              Remove-WebBinding -Name $siteName -BindingInformation "*:$port:*" -Protocol http -ErrorAction SilentlyContinue
+              Remove-WebBinding -Name $siteName -BindingInformation "*:${port}:*" -Protocol http -ErrorAction SilentlyContinue
               New-WebBinding -Name $siteName -Protocol http -IPAddress * -HostHeader $hostHeader -Port $port
             }
           }
