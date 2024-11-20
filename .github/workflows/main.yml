@@ -46,7 +46,7 @@ jobs:
         shell: powershell
         run: |
           # Define paths
-          $sourcePath = "${{ github.workspace }}\dist\timedashboard"  # Adjust if necessary
+          $sourcePath = "${{ github.workspace }}\browser"  # Adjust if necessary
           $destinationPath = "C:\Kesava\Web\Timer"
 
           # Validate source path
