@@ -46,7 +46,7 @@ jobs:
         shell: powershell
         run: |
           # Define paths
-          $sourcePath = "${{ github.workspace }}\dist\timedashboard"
+          $sourcePath = "${{ github.workspace }}\browser"
           $destinationPath = "C:\Kesava\Web\Timer"
 
           # Create the destination directory if it doesn't exist
@@ -89,4 +89,3 @@ jobs:
           Start-Website -Name $siteName
 
           Write-Host "Deployment complete. Site $siteName is running."
-
