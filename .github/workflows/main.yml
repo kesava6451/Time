@@ -62,7 +62,7 @@ jobs:
         shell: powershell
         run: |
           Import-Module WebAdministration
-          $siteName = 'currenttime'
+          $siteName = 'TimeApp'
           $physicalPath = 'C:\Kesava\Web\Timer'
           $port = 80
           $hostHeader = 'currenttime.com'
