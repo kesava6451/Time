@@ -46,7 +46,7 @@ jobs:
         shell: powershell
         run: |
           # Define paths
-          $sourcePath = "${{ github.workspace }}\browser"  # Adjust if necessary
+          $sourcePath = "${{ github.workspace }}\browser"
           $destinationPath = "C:\Kesava\Web\Timer"
 
           # Validate source path
@@ -68,12 +68,7 @@ jobs:
       - name: Deploy to IIS
         shell: powershell
         run: |
-          Import-Module WebAdministration -ErrorAction SilentlyContinue
-          if (-Not (Get-Command "New-Website" -ErrorAction SilentlyContinue)) {
-              Write-Error "WebAdministration module is not available on this machine. Ensure IIS and its management tools are installed."
-              exit 1
-          }
-
+          Import-Module WebAdministration 
           $siteName = 'TimeApp'
           $physicalPath = 'C:\Kesava\Web\Timer'
           $port = 80
