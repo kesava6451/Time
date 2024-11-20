@@ -31,7 +31,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: angular-build
-          path: dist/timedashboard  # Ensure this matches your Angular output directory
+          path: dist/timedashboard
 
   deploy:
     runs-on: self-hosted
@@ -45,23 +45,23 @@ jobs:
       - name: Copy build files to IIS directory
         shell: powershell
         run: |
-          # Define paths
-          $sourcePath = "${{ github.workspace }}\browser"  # Correct source path
+          # Define source and destination paths
+          $sourcePath = "${{ github.workspace }}\browser"
           $destinationPath = "C:\Kesava\Web\Timer"
 
-          # Validate source path
+          # Check if the source path exists
           if (-Not (Test-Path $sourcePath)) {
-              Write-Error "Source path $sourcePath does not exist. Verify the build process and artifact path."
+              Write-Error "Source path $sourcePath does not exist. Verify the build process."
               exit 1
           }
 
           # Create the destination directory if it doesn't exist
           if (-Not (Test-Path $destinationPath)) {
-              Write-Host "Creating directory at $destinationPath"
+              Write-Host "Creating destination directory: $destinationPath"
               New-Item -ItemType Directory -Path $destinationPath -Force
           }
 
-          # Copy the files to the destination
+          # Copy files to the destination
           Write-Host "Copying files from $sourcePath to $destinationPath"
           Copy-Item -Path "$sourcePath\*" -Destination $destinationPath -Recurse -Force
 
@@ -69,43 +69,45 @@ jobs:
         shell: powershell
         run: |
           Import-Module WebAdministration
+
+          # IIS site configuration
           $siteName = 'TimeApp'
           $physicalPath = 'C:\Kesava\Web\Timer'
           $port = 88
 
-          # Ensure physical path exists
+          # Validate physical path exists
           if (-Not (Test-Path $physicalPath)) {
               Write-Error "Physical path $physicalPath does not exist. Verify the folder structure."
               exit 1
           }
 
-          # Check if the site exists
+          # Check if the IIS site exists
           if (!(Get-Website | Where-Object { $_.Name -eq $siteName })) {
               Write-Host "Creating new IIS site: $siteName on port $port"
               New-Website -Name $siteName -PhysicalPath $physicalPath -Port $port -ApplicationPool 'DefaultAppPool'
           } else {
-              Write-Host "IIS site $siteName already exists. Updating physical path."
+              Write-Host "Updating existing IIS site: $siteName"
               Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $physicalPath
 
-              # Check and update bindings
+              # Check and add binding if it doesn't exist
               $bindingExists = Get-WebBinding -Name $siteName | Where-Object { $_.bindingInformation -eq "*:${port}:*" }
-              if ($bindingExists) {
-                  Write-Host "Binding for port $port already exists. Skipping binding creation."
-              } else {
+              if (-Not $bindingExists) {
                   Write-Host "Adding binding for port $port"
                   New-WebBinding -Name $siteName -Protocol http -IPAddress * -Port $port
+              } else {
+                  Write-Host "Binding for port $port already exists. Skipping binding creation."
               }
           }
 
           # Ensure the application pool is running
           $appPoolName = 'DefaultAppPool'
-          $appPoolState = Get-WebAppPoolState -Name $appPoolName
-          if ($appPoolState.Value -ne 'Started') {
+          if ((Get-WebAppPoolState -Name $appPoolName).Value -ne 'Started') {
               Write-Host "Starting application pool: $appPoolName"
               Start-WebAppPool -Name $appPoolName
           }
 
-          # Ensure the site is running
+          # Start the IIS site
+          Write-Host "Starting IIS site: $siteName"
           Start-Website -Name $siteName
 
           Write-Host "Deployment complete. Site $siteName is running on port $port."
