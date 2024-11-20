@@ -65,6 +65,7 @@ jobs:
           $siteName = 'currenttime'
           $physicalPath = 'C:\Kesava\Web\Timer'
           $port = 80
+          $hostHeader = 'currenttime.com'
 
           # Check if the site exists
           if (!(Get-Website | Where-Object { $_.Name -eq $siteName })) {
