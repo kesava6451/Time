@@ -46,7 +46,7 @@ jobs:
         shell: powershell
         run: |
           # Define paths
-          $sourcePath = "${{ github.workspace }}\browser"  # Adjust if necessary
+          $sourcePath = "${{ github.workspace }}\browser"  # Corrected source path
           $destinationPath = "C:\Kesava\Web\Timer"
 
           # Validate source path
@@ -71,17 +71,24 @@ jobs:
           Import-Module WebAdministration
           $siteName = 'TimeApp'
           $physicalPath = 'C:\Kesava\Web\Timer'
+          $port = 88
 
           # Check if the site exists
           if (!(Get-Website | Where-Object { $_.Name -eq $siteName })) {
-            Write-Host "Creating new IIS site: $siteName"
-            New-Website -Name $siteName -PhysicalPath $physicalPath -ApplicationPool 'DefaultAppPool'
+              Write-Host "Creating new IIS site: $siteName on port $port"
+              New-Website -Name $siteName -PhysicalPath $physicalPath -Port $port -ApplicationPool 'DefaultAppPool'
           } else {
-            Write-Host "IIS site $siteName already exists. Updating physical path."
-            Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $physicalPath
+              Write-Host "IIS site $siteName already exists. Updating physical path."
+              Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $physicalPath
+
+              # Update bindings for port 88
+              Write-Host "Ensuring the site is bound to port $port"
+              Remove-WebBinding -Name $siteName -BindingInformation "*:80:*" -Protocol http -ErrorAction SilentlyContinue
+              Remove-WebBinding -Name $siteName -BindingInformation "*:88:*" -Protocol http -ErrorAction SilentlyContinue
+              New-WebBinding -Name $siteName -Protocol http -IPAddress * -Port $port
           }
 
           # Ensure the site is running
           Start-Website -Name $siteName
 
-          Write-Host "Deployment complete. Site $siteName is running."
+          Write-Host "Deployment complete. Site $siteName is running on port $port."
