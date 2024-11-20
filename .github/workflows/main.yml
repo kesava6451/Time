@@ -73,6 +73,12 @@ jobs:
           $physicalPath = 'C:\Kesava\Web\Timer'
           $port = 88
 
+          # Ensure physical path exists
+          if (-Not (Test-Path $physicalPath)) {
+              Write-Error "Physical path $physicalPath does not exist. Verify the folder structure."
+              exit 1
+          }
+
           # Check if the site exists
           if (!(Get-Website | Where-Object { $_.Name -eq $siteName })) {
               Write-Host "Creating new IIS site: $siteName on port $port"
@@ -83,9 +89,18 @@ jobs:
 
               # Update bindings for port 88
               Write-Host "Ensuring the site is bound to port $port"
-              Remove-WebBinding -Name $siteName -BindingInformation "*:80:*" -Protocol http -ErrorAction SilentlyContinue
-              Remove-WebBinding -Name $siteName -BindingInformation "*:88:*" -Protocol http -ErrorAction SilentlyContinue
+              Get-WebBinding -Name $siteName | Where-Object { $_.bindingInformation -eq "*:88:*" } | ForEach-Object {
+                  Remove-WebBinding -Name $siteName -BindingInformation $_.bindingInformation -Protocol http
+              }
               New-WebBinding -Name $siteName -Protocol http -IPAddress * -Port $port
+          }
+
+          # Ensure the application pool is running
+          $appPoolName = 'DefaultAppPool'
+          $appPoolState = Get-WebAppPoolState -Name $appPoolName
+          if ($appPoolState.Value -ne 'Started') {
+              Write-Host "Starting application pool: $appPoolName"
+              Start-WebAppPool -Name $appPoolName
           }
 
           # Ensure the site is running
