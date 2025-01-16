@@ -10,34 +10,21 @@ on:
         options:
           - staging
           - prod
+      
 
 jobs:
-  deploy:
+  # Job for Staging Environment Deployment
+  staging:
     runs-on: ubuntu-latest
-
+    if: ${{ github.event.inputs.environment == 'staging' }}
     steps:
-      # Step 1: Output the selected environment
-      - name: Output selected environment
-        run: echo "Deploying to ${{ github.event.inputs.environment }} environment"
-
-      # Step 2: Staging deployment step
       - name: Deploy to Staging
-        if: ${{ github.event.inputs.environment == 'staging' }}
-        run: |
-          echo "Deploying to Staging environment..."
-          # Add your staging deployment commands here, like:
-          # kubectl apply -f staging-deployment.yaml
-          
-      # Step 3: Production deployment step
+        run: echo "Deploying to Staging"
+
+  # Job for Production Environment Deployment
+  prod:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.environment == 'prod' }}
+    steps:
       - name: Deploy to Production
-        if: ${{ github.event.inputs.environment == 'prod' }}
-        run: |
-          echo "Deploying to Production environment..."
-          # Add your production deployment commands here, like:
-          # kubectl apply -f prod-deployment.yaml
-          
-      # Step 4: Common post-deployment tasks (optional)
-      - name: Post Deployment Task
-        run: |
-          echo "Performing post-deployment tasks"
-          # Add your common tasks, such as logging or notification.
+        run: echo "Deploying to Production"
